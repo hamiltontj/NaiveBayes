@@ -9,6 +9,7 @@ public class NaiveBayes
 	{ 
 		String fileName = "./data/IrisDataSet.xls";
 		String test = "";
+		String data[][];
 		
 		
 		System.out.println("Importing file called: " + fileName);
@@ -28,12 +29,13 @@ public class NaiveBayes
 			Workbook excelFile = new HSSFWorkbook(file);
 			
 			Sheet sheet1 = excelFile.getSheetAt(0);
+			data = new String[sheet1.getPhysicalNumberOfRows()][sheet1.getRow(0).getPhysicalNumberOfCells()];
 			
 			for(Row row : sheet1)
 			{
 				for(Cell cell: row)
 				{
-					test += cell.toString();
+					data[cell.getRowIndex()][cell.getColumnIndex()] = cell.toString();
 				}
 			}
 			
