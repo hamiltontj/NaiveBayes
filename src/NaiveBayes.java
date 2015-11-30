@@ -340,7 +340,7 @@ public class NaiveBayes
 			classifier.add(new LinkedList<String[]>());
 		}
 		
-		//Loop on attribute
+		//Loop on attribute even though looping on node would be more efficient due to less cache misses this project is not meant for big data anyways and it is much more readable and comprehensible this way anyways if you want a headache you can flip it around
 		for(int attribute = 0; attribute < classifier.size(); attribute++)
 		{
 			generateClassifierNaiveBayes(attribute);
@@ -442,7 +442,7 @@ public class NaiveBayes
 	}
 	public static void printLinkedListClassifier(LinkedList<LinkedList<String[]>> classifier)
 	{
-		System.out.print("[");
+		System.out.print("[\n");
 		for(int i = 0; i < classifier.size(); i++)
 		{
 			System.out.print("[" + metadataLL.get(i)[0] + "::");
@@ -469,6 +469,16 @@ public class NaiveBayes
 		System.out.print("]\n");		
 	}
 	
+	public static void printClassificationTypes()
+	{
+		System.out.print("[");
+		for(int i = 0; i < classificationTypes.size(); i++)
+		{		
+			System.out.print(classificationTypes.get(i) + ", ");
+		}
+		System.out.print("]\n");		
+	}
+	
 	public static void outputExcelFile(String fileLocation, String optionalSecondaryfileLocation)
 	{
 		outputExcelFile(fileLocation);
@@ -489,22 +499,26 @@ public class NaiveBayes
 			
 			CellStyle correctCell = workbook.createCellStyle();
 			correctCell.setFillForegroundColor(HSSFColor.GREEN.index);	
-			correctCell.setFillBackgroundColor(HSSFColor.GREEN.index);		
+			correctCell.setFillBackgroundColor(HSSFColor.GREEN.index);
+			correctCell.setFillPattern(CellStyle.SOLID_FOREGROUND);
 			
 			CellStyle incorrectCell = workbook.createCellStyle();
-			correctCell.setFillForegroundColor(HSSFColor.RED.index);
-			correctCell.setFillBackgroundColor(HSSFColor.RED.index);	
+			incorrectCell.setFillForegroundColor(HSSFColor.RED.index);
+			incorrectCell.setFillBackgroundColor(HSSFColor.RED.index);
+			incorrectCell.setFillPattern(CellStyle.SOLID_FOREGROUND);	
 
 			CellStyle classificationCells = workbook.createCellStyle();
-			correctCell.setFillForegroundColor(HSSFColor.YELLOW.index);
-			correctCell.setFillBackgroundColor(HSSFColor.YELLOW.index);	
+			classificationCells.setFillForegroundColor(HSSFColor.YELLOW.index);
+			classificationCells.setFillBackgroundColor(HSSFColor.YELLOW.index);	
+			classificationCells.setFillPattern(CellStyle.SOLID_FOREGROUND);
 			
 			CellStyle attributeNameCells = workbook.createCellStyle();
 			attributeNameCells.setFont(bold);
 
 			CellStyle classificationAttributeCell = workbook.createCellStyle();
-			correctCell.setFillForegroundColor(HSSFColor.YELLOW.index);
-			correctCell.setFillBackgroundColor(HSSFColor.YELLOW.index);
+			classificationAttributeCell.setFillForegroundColor(HSSFColor.YELLOW.index);
+			classificationAttributeCell.setFillBackgroundColor(HSSFColor.YELLOW.index);
+			classificationAttributeCell.setFillPattern(CellStyle.SOLID_FOREGROUND);
 			classificationAttributeCell.setFont(bold);
 
 			Row currRow = worksheet.createRow(0);
@@ -617,10 +631,10 @@ public class NaiveBayes
 	public static void main(String[] args) 
 	{ 
 		String intputFileName = "./data/golfWeather.xls";
-		String outputFileName = "./results/golfWeather-results.xls";
+		String outputFileName = "./results/golfWeather.xls";
 		
 		
-		System.out.println("Importing file called: " + intputFileName);		
+		System.out.println("Importing data from: " + intputFileName);		
 		readExcelFile(intputFileName);
 		System.out.println("Imported");
 		
@@ -628,31 +642,42 @@ public class NaiveBayes
 		//TODO autogen row 2 from data if missing? Make row 1 not required? Assume last column if row 3 is missing
 		
 		
+		
 		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
-		generateTrainingDataFirst(dataLL.size() - 3);
+		generateTrainingDataRandom(dataLL.size() - 3);
+	
+
+		System.out.println("\nThe Data Is As Follows::");
+		//System.out.print("All Data: "); printLinkedListDataWithClassification(dataLL, classificationsLL);
+		System.out.print("Training Data: "); printLinkedListDataWithClassification(trainingDataLL, knownClassifications);
+		System.out.print("Testing Data: "); printLinkedListDataWithClassification(testDataLL, actualClassifications);
+		//printLinkedDataList(dataLL);
+		//printLinkedDataList(trainingDataLL);
+		//printLinkedDataList(testDataLL);
+		
 		
 		
 		generateClassifier();
 		generateClassifications();
 		
+		System.out.print("\nClassification Types: "); printClassificationTypes(); //TODO make this its own function and print out all classification types	
+		System.out.print("Each data occurence in training data followed by likelihood of it for each possible classification (The model or classifier)::\n");printLinkedListClassifier(classifier);		
+		
+		System.out.print("Guessed Classifications: "); printClassification(guessedClassifications);
+		System.out.print("Actual Classifications: "); printClassification(actualClassifications);	
+		
+
+
+		
+		
+		
+		System.out.println("Exporting results to: " + outputFileName);	
 		outputExcelFile(outputFileName);
+		System.out.println("Exported");
 		
-		//printLinkedDataList(dataLL);
-		//printLinkedDataList(trainingDataLL);
-		//printLinkedDataList(testDataLL);
+
 		
-		printLinkedListDataWithClassification(dataLL, classificationsLL);
-		printLinkedListDataWithClassification(trainingDataLL, knownClassifications);
-		printLinkedListDataWithClassification(testDataLL, actualClassifications);
 		
-		printClassification(guessedClassifications);
-		printClassification(actualClassifications);		
-		
-		System.out.print("\n\n" + classificationTypes.get(0)+":"+classificationTypes.get(1)+"\n");
-		
-		printLinkedListClassifier(classifier);
-		
-		//TODO output excel file
 		
 		//System.out.println(testDataLL);
 	}
