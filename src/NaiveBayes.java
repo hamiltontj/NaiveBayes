@@ -252,6 +252,79 @@ public class NaiveBayes
 	}	
 	//TODO implement more trainingData generators if time allows
 	
+	public static void generateClassifierNaiveBayes(int attribute)
+	{
+		LinkedList<String> knownInstances = new LinkedList<String>();//Keep all seen attributes in here
+		int totalFrequency[] = new int[classificationTypes.size()]; //Keep the total seen of each classification for use later but is more efficent to calculate inside the instance counting loop
+		
+		//Loop on nodes of each attribute
+		for(int node = 0; node < trainingDataLL.size(); node++)
+		{
+			//Get value of current node
+			String currNode = trainingDataLL.get(node)[attribute];				
+			
+			int loc = -1;
+			for(int i = 0; i < knownInstances.size(); i++)
+			{
+				if(knownInstances.get(i).compareTo(currNode) == 0)
+				{
+					loc = i;
+				}
+			}
+			
+			//If no values of this attribute are known
+			if(loc == -1)
+			{
+				String[] temp = new String[classificationTypes.size() + 1]; //Array to store frequency
+				temp[0] = currNode; //Label array
+				knownInstances.add(currNode); //Add label to the currently known instances
+				
+				//Build frequency counts since this is first pass values can be assume 0 if not equal to current classification and 1 if it is
+				for(int i = 0; i < classificationTypes.size(); i++)
+				{
+					if(classificationTypes.get(i).compareTo(knownClassifications.get(node)) == 0)
+					{
+						temp[i+1] = "1";
+						totalFrequency[i]++;
+					}
+					else
+					{
+						temp[i+1] = "0";
+					}
+				}
+				classifier.get(attribute).add(temp); //Add built array to current attribute
+			}
+			else
+			{
+				for(int i = 0; i < knownInstances.size(); i++)
+				{
+					if(classifier.get(attribute).get(i)[0].compareTo(currNode) == 0)
+					{
+						for(int j = 0; j < classificationTypes.size(); j++)
+						{
+							if(classificationTypes.get(j).compareTo(knownClassifications.get(node)) == 0)
+							{
+								classifier.get(attribute).get(i)[j+1] = Integer.toString(1 + Integer.parseInt(classifier.get(attribute).get(i)[j+1]));
+								totalFrequency[j]++;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		//Now more efficient just do one pass through the frequencies once everything is tallied to convert from counts to percents (helpful hint: Each attribute for each classification if you add up all occurrences percents it should equal 1 or roughly 1 since precision in computers)
+		for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
+		{			
+			for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
+			{
+				int currFrequency = 0;
+				
+				currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for attribute name value being in position 0
+				classifier.get(attribute).get(occurrences)[classification + 1] = Double.toString((double)currFrequency/(double)totalFrequency[classification]); //Plus 1 to offset for attribute name value being in position 0
+			}
+		}
+	}
 	public static void generateClassifier()
 	{
 		//First linked list has a node for every attribute
@@ -270,83 +343,10 @@ public class NaiveBayes
 		//Loop on attribute
 		for(int attribute = 0; attribute < classifier.size(); attribute++)
 		{
-			LinkedList<String> knownInstances = new LinkedList<String>();//Keep all seen attributes in here
-			
-			//Loop on nodes of each attribute
-			for(int node = 0; node < trainingDataLL.size(); node++)
-			{
-				//Get value of current node
-				String currNode = trainingDataLL.get(node)[attribute];				
-				
-				int loc = -1;
-				for(int i = 0; i < knownInstances.size(); i++)
-				{
-					if(knownInstances.get(i).compareTo(currNode) == 0)
-					{
-						loc = i;
-					}
-				}
-				
-				//If no values of this attribute are known
-				if(loc == -1)
-				{
-					String[] temp = new String[classificationTypes.size() + 1]; //Array to store frequency
-					temp[0] = currNode; //Label array
-					knownInstances.add(currNode); //Add label to the currently known instances
-					
-					//Build frequency counts since this is first pass values can be assume 0 if not equal to current classification and 1 if it is
-					for(int i = 0; i < classificationTypes.size(); i++)
-					{
-						if(classificationTypes.get(i).compareTo(knownClassifications.get(node)) == 0)
-						{
-							temp[i+1] = "1";
-						}
-						else
-						{
-							temp[i+1] = "0";
-						}
-					}
-					classifier.get(attribute).add(temp); //Add built array to current attribute
-				}
-				else
-				{
-					for(int i = 0; i < knownInstances.size(); i++)
-					{
-						if(classifier.get(attribute).get(i)[0].compareTo(currNode) == 0)
-						{
-							for(int j = 0; j < classificationTypes.size(); j++)
-							{
-								if(classificationTypes.get(j).compareTo(knownClassifications.get(node)) == 0)
-								{
-									classifier.get(attribute).get(i)[j+1] = Integer.toString(1 + Integer.parseInt(classifier.get(attribute).get(i)[j+1]));
-								}
-							}
-						}
-					}
-				}
-			}
+			generateClassifierNaiveBayes(attribute);
 		}
 		
-		//TODO May be possible to integrate into the above for loop to make more efficent  
-		for(int attribute = 0; attribute < classifier.size(); attribute++)
-		{
-			for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
-			{
-				int totalFrequency = 0;
-				for(int i = 0; i < classifier.get(attribute).size(); i++) //Loop to get total
-				{
-					totalFrequency += Integer.parseInt(classifier.get(attribute).get(i)[classification + 1]); //Plus 1 to offset for attribute name value being in position 0
-				}
-				
-				for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
-				{
-					int currFrequency = 0;
-					
-					currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for attribute name value being in position 0
-					classifier.get(attribute).get(occurrences)[classification + 1] = Double.toString((double)currFrequency/(double)totalFrequency); //Plus 1 to offset for attribute name value being in position 0
-				}
-			}
-		}
+		//This should work with either classifier type since classification types need to be seen before
 		for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
 		{
 			int currClassificationCount = 0;
@@ -616,7 +616,7 @@ public class NaiveBayes
 	
 	public static void main(String[] args) 
 	{ 
-		String intputFileName = "./data/golfWeather - data.xls";
+		String intputFileName = "./data/golfWeather.xls";
 		String outputFileName = "./results/golfWeather-results.xls";
 		
 		
@@ -628,7 +628,8 @@ public class NaiveBayes
 		//TODO autogen row 2 from data if missing? Make row 1 not required? Assume last column if row 3 is missing
 		
 		
-		generateTrainingDataFromFile("./data/golfWeather - training.xls");
+		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
+		generateTrainingDataFirst(dataLL.size() - 3);
 		
 		
 		generateClassifier();
