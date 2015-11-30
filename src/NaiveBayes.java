@@ -243,6 +243,38 @@ public class NaiveBayes
 				}
 			}
 		}
+		
+		//TODO May be possible to integrate into the above for loop to make more efficent  
+		for(int attribute = 0; attribute < classifier.size(); attribute++)
+		{
+			for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
+			{
+				for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
+				{
+					int totalFrequency = 0;
+					int currFrequency = 0;
+
+					for(int i = 0; i < classifier.get(attribute).size(); i++) //Loop to get total
+					{
+						totalFrequency += Integer.parseInt(classifier.get(attribute).get(i)[classification+1]); //Plus 1 to offset for value
+					}
+					currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]);
+					classifier.get(attribute).get(occurrences)[classification] = Double.toString((double)currFrequency/(double)totalFrequency);
+				}
+			}
+		}
+		for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
+		{
+			int currClassificationCount = 0;
+			for(int i = 0; i < knownClassifications.size(); i++)
+			{
+				if(classificationTypes.get(classification).compareTo(knownClassifications.get(i)) == 0)
+				{
+					currClassificationCount++;
+				}
+			}			
+			classificationFrequencies.add((double)currClassificationCount/(double)knownClassifications.size()); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
+		}
 	}
 	
 	//TODO make this call a different class if it encounters a continuous data type attribute and split discrete to be its own function as well.
@@ -255,28 +287,15 @@ public class NaiveBayes
 			double classificationScore = 1;//Init to 1 since using a *=  (That would have saved me 15 minutes of debugging why my ints seemed to not be casting and why my outputs were always the first classification)		
 			for(int attribute = 0; attribute < classifier.size(); attribute++)
 			{
-				int totalFrequency = 0;
-				int currFrequency = 0;
 				for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
-				{
-					totalFrequency += Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for value
-					
+				{				
 					if(classifier.get(attribute).get(occurrences)[0].compareTo(node[attribute]) == 0)//Check if current occurrence string is the same as the curr attr string 
 					{
-						currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]);
+						classificationScore *= Double.parseDouble(classifier.get(attribute).get(occurrences)[0]);
 					}
 				}
-				classificationScore *= (double)currFrequency/(double)totalFrequency;
 			}
-			int currClassificationCount = 0;
-			for(int i = 0; i < knownClassifications.size(); i++)
-			{
-				if(classificationTypes.get(classification).compareTo(knownClassifications.get(i)) == 0)
-				{
-					currClassificationCount++;
-				}
-			}
-			classificationFrequencies.add((double)currClassificationCount/(double)knownClassifications.size()); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
+			
 			classificationScores[classification] = classificationScore*classificationFrequencies.get(classification); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
 		}
 
