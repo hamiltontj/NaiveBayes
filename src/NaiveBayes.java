@@ -22,6 +22,7 @@ public class NaiveBayes
 	//static int classCount = 0; //Made dynamic so it could potentially handle jagged data i.e. sentence classification
 	static int classificationLocation = -1;
 	static LinkedList<String>  classificationTypes = new LinkedList<String>();
+	static LinkedList<Double>  classificationFrequencies = new LinkedList<Double>();
 
 	static LinkedList<String> knownClassifications = new LinkedList<String>();
 	static LinkedList<String> guessedClassifications = new LinkedList<String>();
@@ -247,13 +248,11 @@ public class NaiveBayes
 	//TODO make this call a different class if it encounters a continuous data type attribute and split discrete to be its own function as well.
 	public static String classify(String[] node)
 	{
-		
-		int selectedClassification = -1;
 		double[] classificationScores = new double[classificationTypes.size()]; 
 		
 		for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
 		{
-			double classificationScore = 1;//Init to 1 since using a *=  (That would have saved me 15 minutes of debugging why my ints seemed to not be casting and my outputs were not right)		
+			double classificationScore = 1;//Init to 1 since using a *=  (That would have saved me 15 minutes of debugging why my ints seemed to not be casting and why my outputs were always the first classification)		
 			for(int attribute = 0; attribute < classifier.size(); attribute++)
 			{
 				int totalFrequency = 0;
@@ -277,20 +276,29 @@ public class NaiveBayes
 					currClassificationCount++;
 				}
 			}
-			classificationScores[classification] = classificationScore*((double)currClassificationCount/(double)knownClassifications.size()); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
+			classificationFrequencies.add((double)currClassificationCount/(double)knownClassifications.size()); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
+			classificationScores[classification] = classificationScore*classificationFrequencies.get(classification); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
 		}
-		
+
+		int selectedClassificationLocation = -1;
 		double largestClassificationScore = -1;
-		for(int i = 0; i < classificationScores.length; i++)
+		for(int classification = 0; classification < classificationScores.length; classification++)
 		{
-			if(classificationScores[i] > largestClassificationScore)
+			if(classificationScores[classification] > largestClassificationScore)
 			{
-				largestClassificationScore = classificationScores[i];
-				selectedClassification = i;
+				largestClassificationScore = classificationScores[classification];
+				selectedClassificationLocation = classification;
+			}
+			else if(classificationScores[classification] == largestClassificationScore) //Unlikely but may happen if an unknown attribute value if found in the data and then both will be 0 (Now tested with that and does perform as expected)
+			{
+				if(classificationFrequencies.get(classification) > classificationFrequencies.get(selectedClassificationLocation))
+				{
+					selectedClassificationLocation = classification;
+				}
 			}
 		}
 		
-		return classificationTypes.get(selectedClassification);
+		return classificationTypes.get(selectedClassificationLocation);
 	}
 	public static void generateClassifications()
 	{
@@ -516,7 +524,7 @@ public class NaiveBayes
 		//classificationLocation = 5 -1; //Now autogened these from data or gui
 		//TODO autogen row 2 from data if missing? Make row 1 not required? Assume last column if row 3 is missing
 		
-		generateTrainingDataStride(dataLL.size()-2);
+		generateTrainingDataFirst(dataLL.size()-2);
 		
 		generateClassifier();
 		generateClassifications();
