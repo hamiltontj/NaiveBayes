@@ -36,7 +36,8 @@ public class NaiveBayes
 	public static void readExcelFile(String fileName)
 	{
 		FileInputStream file;
-		try {
+		try 
+		{
 			file = new FileInputStream(new File(fileName));
 			Workbook excelFile = new HSSFWorkbook(file);
 			
@@ -183,6 +184,72 @@ public class NaiveBayes
 			removalCount++;
 		}
 	}
+	public static void generateTrainingDataFromFile(String fileLocation) //Requires that the original file had the metadata and requires that this file is formated the same in first sheet
+	{
+		testDataLL = (LinkedList<String[]>) dataLL.clone();
+		actualClassifications = (LinkedList<String>) classificationsLL.clone();		
+		
+		FileInputStream file;
+		try 
+		{
+			file = new FileInputStream(new File(fileLocation));
+			Workbook excelFile = new HSSFWorkbook(file);
+			Sheet sheet1 = excelFile.getSheetAt(0);//Data sheet
+			for(Row row : sheet1)
+			{
+				String data[] = new String[row.getPhysicalNumberOfCells() - 1];
+				String classification = "";
+				
+				int offset = 0; //Used so that we can declare an array of the size of the attributes without the classification
+				for(Cell cell: row)
+				{
+					int index = cell.getColumnIndex();
+					if(classificationLocation != index)
+					{
+						data[index - offset] = cell.toString();
+					}
+					else
+					{
+						classification = cell.toString();
+						offset++;
+					}
+				}
+				
+				
+				//Even though data and classifications are not really used add it onto the end so it is still complete for in the event they end up being used in a later version
+				dataLL.add(data);
+				classificationsLL.add(classification);
+				
+				trainingDataLL.add(data);
+				knownClassifications.add(classification);
+				
+				//Check to see if we have seen that classification yet
+				int occurrences = 0;
+				for(int i = 0; i < classificationTypes.size() && occurrences == 0; i++)
+				{
+					if(classificationTypes.get(i).compareTo(classification) == 0)
+					{
+						occurrences = 1;
+					}
+				}
+				if(occurrences == 0)
+				{
+					classificationTypes.add(classification);
+				}
+			}
+		}
+		catch (FileNotFoundException e) 
+		{
+			System.out.println("Error file not found");
+			System.exit(0);
+		}
+		catch (IOException e) 
+		{
+			System.out.println("Unable to read file, disk drive may be failing");
+			e.printStackTrace();
+			System.exit(0);
+		}
+	}	
 	//TODO implement more trainingData generators if time allows
 	
 	public static void generateClassifier()
@@ -549,7 +616,7 @@ public class NaiveBayes
 	
 	public static void main(String[] args) 
 	{ 
-		String intputFileName = "./data/golfWeather.xls";
+		String intputFileName = "./data/golfWeather - data.xls";
 		String outputFileName = "./results/golfWeather-results.xls";
 		
 		
@@ -560,7 +627,9 @@ public class NaiveBayes
 		//classificationLocation = 5 -1; //Now autogened these from data or gui
 		//TODO autogen row 2 from data if missing? Make row 1 not required? Assume last column if row 3 is missing
 		
-		generateTrainingDataFirst(dataLL.size()-2);
+		
+		generateTrainingDataFromFile("./data/golfWeather - training.xls");
+		
 		
 		generateClassifier();
 		generateClassifications();
