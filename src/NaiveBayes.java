@@ -84,20 +84,22 @@ public class NaiveBayes
 					{
 						classificationsLL.add(cell.toString());
 						
-						//Check to see if we have seen it yet
-
-						int occurrences = 0;
-						for(int i = 0; i < classificationTypes.size(); i++)
-						{
-							if(classificationTypes.get(i).compareTo(cell.toString()) == 0)
-							{
-								occurrences++;
-							}
-						}
-						if(occurrences == 0)
-						{
-							classificationTypes.add(cell.toString());
-						}
+						//Moved to generate training data so that we do not get possible classifications from unknown data since some denote unknown by saying ?
+						
+//						//Check to see if we have seen it yet
+//
+//						int occurrences = 0;
+//						for(int i = 0; i < classificationTypes.size(); i++)
+//						{
+//							if(classificationTypes.get(i).compareTo(cell.toString()) == 0)
+//							{
+//								occurrences++;
+//							}
+//						}
+//						if(occurrences == 0)
+//						{
+//							classificationTypes.add(cell.toString());
+//						}
 						offset++;
 					}
 				}
@@ -126,6 +128,20 @@ public class NaiveBayes
 	{
 		trainingDataLL.add(testDataLL.get(locationIndex));
 		knownClassifications.add(actualClassifications.get(locationIndex));
+
+		//Check to see if we have seen that classification yet
+		int occurrences = 0;
+		for(int i = 0; i < classificationTypes.size() && occurrences == 0; i++)
+		{
+			if(classificationTypes.get(i).compareTo(actualClassifications.get(locationIndex)) == 0)
+			{
+				occurrences = 1;
+			}
+		}
+		if(occurrences == 0)
+		{
+			classificationTypes.add(actualClassifications.get(locationIndex));
+		}
 		
 		testDataLL.remove(locationIndex);
 		actualClassifications.remove(locationIndex);
@@ -249,17 +265,18 @@ public class NaiveBayes
 		{
 			for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
 			{
+				int totalFrequency = 0;
+				for(int i = 0; i < classifier.get(attribute).size(); i++) //Loop to get total
+				{
+					totalFrequency += Integer.parseInt(classifier.get(attribute).get(i)[classification + 1]); //Plus 1 to offset for attribute name value being in position 0
+				}
+				
 				for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
 				{
-					int totalFrequency = 0;
 					int currFrequency = 0;
-
-					for(int i = 0; i < classifier.get(attribute).size(); i++) //Loop to get total
-					{
-						totalFrequency += Integer.parseInt(classifier.get(attribute).get(i)[classification+1]); //Plus 1 to offset for value
-					}
-					currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]);
-					classifier.get(attribute).get(occurrences)[classification] = Double.toString((double)currFrequency/(double)totalFrequency);
+					
+					currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for attribute name value being in position 0
+					classifier.get(attribute).get(occurrences)[classification + 1] = Double.toString((double)currFrequency/(double)totalFrequency); //Plus 1 to offset for attribute name value being in position 0
 				}
 			}
 		}
@@ -291,7 +308,7 @@ public class NaiveBayes
 				{				
 					if(classifier.get(attribute).get(occurrences)[0].compareTo(node[attribute]) == 0)//Check if current occurrence string is the same as the curr attr string 
 					{
-						classificationScore *= Double.parseDouble(classifier.get(attribute).get(occurrences)[0]);
+						classificationScore *= Double.parseDouble(classifier.get(attribute).get(occurrences)[classification+1]);
 					}
 				}
 			}
