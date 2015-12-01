@@ -393,7 +393,7 @@ public class NaiveBayes
 				if(isUnseenValue)
 				{
 					//If data is unseen rebuild using a 0 instances value
-					//TODO maybe do not do if laplacianSmoother is 0 since ignoring that attribute works better than doing a 0 for it
+					//TODO maybe do not do if laplacianSmoother is 0 since ignoring that attribute works better than doing a 0 for it probably not since laplacianSmoother is a thousand time better than just doing 0
 					classificationScore *= (0 + laplacianSmoother)/  attributeTotalFrequency.get(attribute)[classification] + laplacianSmoother * (classifier.get(attribute).size());
 					//classificationScore *= 0;
 				}
@@ -603,7 +603,7 @@ public class NaiveBayes
 					{
 						if(unseenDataFlag.get(node))
 						{
-							currCell.setCellValue("This node contained an value for one of its attributes that was never seen, the training data may have been bad and a guess was made"); //TODO make this a bit shorter
+							currCell.setCellValue("This node an attribute value not in the training set, classifier selected is based on most frequent classifier. If laplacian smoothing is 1 or more this likely wont happen"); //TODO make this a bit shorter
 						}
 					}
 				}
@@ -638,7 +638,7 @@ public class NaiveBayes
 				}
 			}
 			
-			worksheet = workbook.createSheet("Likelihood");
+			worksheet = workbook.createSheet("Likelihood");						
 			currRow = worksheet.createRow(0);
 			
 			int largestAttributeSize = 0;
@@ -668,6 +668,7 @@ public class NaiveBayes
 				}
 			}	
 			
+			//List possible classifications on the side and classification likelihoods at the end
 			for(int i = 0; i < (largestAttributeSize * (classificationTypes.size() + 1) + classificationTypes.size() + 1); i++)	//+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
 			{																													//+classificationTypes.size() so we can list the classification types likelihood at the end
 				currRow = worksheet.createRow(i + 1); //+1 since first row is attribute names
@@ -682,7 +683,7 @@ public class NaiveBayes
 					{
 						if(currentClassificationType == 0)
 						{
-							//Do nothing for now may have it say value later
+							//Do nothing for now may have it say something later
 						}
 						else if (currentClassificationType == j)
 						{
@@ -690,7 +691,7 @@ public class NaiveBayes
 						}
 					}
 				}
-				else //List the classification likelihood of each row along the side
+				else //List the likelihood of each classification at the end
 				{
 					
 					for(int j = 0; j < classificationTypes.size() + 1; j++) //+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
@@ -709,17 +710,15 @@ public class NaiveBayes
 			}
 			
 			//List the data
-			for(int i = 0; i < classifier.size(); i++)
+			for(int attribute = 0; attribute < classifier.size(); attribute++)
 			{
-				for(int j = 0; j < classifier.get(i).size(); j++)
+				for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
 				{
-					String[] currNode = classifier.get(i).get(j);
-					for(int k = 0; k < currNode.length; k++)
+					for(int classification = 0; classification < classifier.get(attribute).get(occurrences).length; classification++)
 					{
-						System.out.println("i:" + i + " j:" + j + " k:" + k + " largestAttributeSize:" + largestAttributeSize);
-						currRow = worksheet.getRow((j*largestAttributeSize + k)+1); //+1 since first row is attribute names
-						Cell currCell = currRow.createCell((i)+1); //TODO figure out why this errors out at i:0 j:4 k:0 largestAttributeSize:105 on kidney dataset
-						currCell.setCellValue(currNode[k]);
+						currRow = worksheet.getRow((occurrences*classifier.get(attribute).get(occurrences).length + classification)+1); //+1 since first row is attribute names
+						Cell currCell = currRow.createCell((attribute)+1); //TODO figure out why this errors out at i:0 j:4 k:0 largestAttributeSize:105 on kidney dataset
+						currCell.setCellValue(classifier.get(attribute).get(occurrences)[classification]);
 					}
 				}
 			}
