@@ -566,6 +566,8 @@ public class NaiveBayes
 				}
 			}			
 			
+			int correct = 0;
+			int incorrect = 0;
 			for(int node = 0; node < testDataLL.size(); node++)
 			{
 				currRow = worksheet.createRow(node + 1); //Offset by one since first row is header data
@@ -593,10 +595,32 @@ public class NaiveBayes
 						if(guessedClassifications.get(node).compareTo(actualClassifications.get(node)) == 0)
 						{
 							currCell.setCellStyle(correctCell);
+							correct++;
 						}
 						else
 						{
 							currCell.setCellStyle(incorrectCell);
+							incorrect++;
+						}
+						
+						if(node == testDataLL.size() - 1) //If this is the last loop
+						{
+							double precentRight = (double)correct/(correct+incorrect);
+							
+							currRow = worksheet.createRow(node + 2);
+							currCell = currRow.createCell(attribute);
+							
+							currCell.setCellValue(precentRight);
+							if(precentRight > .90)
+							{
+								correctCell.setDataFormat(workbook.createDataFormat().getFormat("0.000%"));
+								currCell.setCellStyle(correctCell);
+							}
+							else
+							{
+								incorrectCell.setDataFormat(workbook.createDataFormat().getFormat("0.000%"));
+								currCell.setCellStyle(incorrectCell);
+							}
 						}
 					}
 					else if(attribute == metadataLL.size() + 1) //Print potential bad training data if the flag is true
@@ -604,10 +628,12 @@ public class NaiveBayes
 						if(unseenDataFlag.get(node))
 						{
 							currCell.setCellValue("This node an attribute value not in the training set, classifier selected is based on most frequent classifier. If laplacian smoothing is 1 or more this likely wont happen"); //TODO make this a bit shorter
-						}
+						}						
 					}
 				}
 			}
+			
+			
 		
 			worksheet = workbook.createSheet("Training Data");
 			currRow = worksheet.createRow(0);
@@ -757,7 +783,7 @@ public class NaiveBayes
 		
 		
 		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
-		generateTrainingDataStride(dataLL.size() - (dataLL.size() / 8));
+		generateTrainingDataStride((dataLL.size() / 8));
 	
 
 		System.out.println("\nTraining data has been generated and is as follows::");
