@@ -1,3 +1,4 @@
+package naiveBayes;
 import java.io.*;
 import java.util.LinkedList;
 
@@ -501,13 +502,13 @@ public class NaiveBayes
 		System.out.print("]\n");		
 	}
 	
-	public static void outputExcelFile(String fileLocation, String optionalSecondaryfileLocation)
+	public static void writeExcelFile(String fileLocation, String optionalSecondaryfileLocation)
 	{
-		outputExcelFile(fileLocation);
-		outputExcelFile(optionalSecondaryfileLocation);
+		writeExcelFile(fileLocation);
+		writeExcelFile(optionalSecondaryfileLocation);
 	}
 	
-	public static void outputExcelFile(String fileLocation)
+	public static void writeExcelFile(String fileLocation)
 	{
 		try 
 		{
@@ -810,12 +811,17 @@ public class NaiveBayes
 		
 		
 		System.out.println("\nExporting results to: " + outputFileName);	
-		outputExcelFile(outputFileName);
+		writeExcelFile(outputFileName);
 		System.out.println("Exported");
 		
 
 		
-		
+		//Steps to do full Naive Bayes Process are as follows
+		//readExcelFile(intputFileName);
+		//generateTrainingDataStride(wantedSizeOfTrainingData); //There are multiple different training data generators
+		//generateClassifier();
+		//generateClassifications();
+		//outputExcelFile(outputFileName);
 		
 		//System.out.println(testDataLL);
 	}

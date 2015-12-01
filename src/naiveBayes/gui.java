@@ -1,3 +1,4 @@
+package naiveBayes;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 
@@ -20,6 +21,8 @@ import javax.swing.JTextPane;
 import javax.swing.JLabel;
 import com.jgoodies.forms.factories.DefaultComponentFactory;
 import javax.swing.JTextField;
+
+import naiveBayes.NaiveBayes;
 
 public class gui extends JFrame 
 {
@@ -91,6 +94,9 @@ public class gui extends JFrame
 
 		JLabel fileStatusLabel = DefaultComponentFactory.getInstance().createLabel("No file has been imported yet");
 		metadataViewerPanel.add(fileStatusLabel);
+		
+		JButton doClassify = new JButton("Classify");
+		metadataViewerPanel.add(doClassify);
 
 		JPanel outputFileBrowsePanel = new JPanel();
 		tabbedPane.addTab("Output File Location", null, outputFileBrowsePanel, null);
@@ -157,6 +163,32 @@ public class gui extends JFrame
 					}
 					exportFileLocationTextField.setText(tempString);
 				}
+			}
+		});
+		
+		doImportButton.addActionListener(new ActionListener() 
+		{ 
+			public void actionPerformed(ActionEvent e) 
+			{
+				NaiveBayes.readExcelFile(importFileLocationTextField.getText());
+			}
+		});
+		
+		doExportButton.addActionListener(new ActionListener() 
+		{ 
+			public void actionPerformed(ActionEvent e) 
+			{
+				NaiveBayes.writeExcelFile(exportFileLocationTextField.getText());
+			}
+		});
+		
+		doClassify.addActionListener(new ActionListener() 
+		{ 
+			public void actionPerformed(ActionEvent e) 
+			{
+				NaiveBayes.generateTrainingDataStride(100); //There are multiple different training data generators
+				NaiveBayes.generateClassifier();
+				NaiveBayes.generateClassifications();
 			}
 		});
 	}
