@@ -23,12 +23,16 @@ public class NaiveBayes
 	static int classificationLocation = -1;
 	static LinkedList<String>  classificationTypes = new LinkedList<String>();
 	static LinkedList<Double>  classificationLikelihood = new LinkedList<Double>();
-
+	static LinkedList<int[]> attributeTotalFrequency = new LinkedList<int[]>();
+	
 	static LinkedList<String> knownClassifications = new LinkedList<String>();
 	static LinkedList<String> guessedClassifications = new LinkedList<String>();
+	static LinkedList<Boolean> unseenDataFlag = new LinkedList<Boolean>(); //Keeps track of when the training data may have been bad because a value showed up that wasnt in the training data and thus a guess was made
 	static LinkedList<String> actualClassifications = new LinkedList<String>();
 	
 	static LinkedList<LinkedList<String[]>> classifier = new LinkedList<LinkedList<String[]>>();
+	
+	static int laplacianSmoother = 1; //To add laplacian smoothing replace this with the smoothing value (higher is more smooth) also replace 0000 with the correct 
 	
 	static final int METADATASIZE = 3; //Size is defined by number of rows in data explanation sheet
 	//Current metadata order is Data name, Data type (discrete or continuous), and a label for which is the classifier
@@ -237,6 +241,7 @@ public class NaiveBayes
 					classificationTypes.add(classification);
 				}
 			}
+			excelFile.close();
 		}
 		catch (FileNotFoundException e) 
 		{
@@ -313,13 +318,17 @@ public class NaiveBayes
 			}
 		}
 		
+		attributeTotalFrequency.add(totalFrequency);
+		
 		//Now more efficient just do one pass through the frequencies once everything is tallied to convert from counts to percents (helpful hint: Each attribute for each classification if you add up all occurrences percents it should equal 1 or roughly 1 since precision in computers)
 		for(int classification = 0; classification < classificationTypes.size(); classification++) //Loop on 
 		{			
 			for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
 			{
 				int currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for attribute name value being in position 0
-				classifier.get(attribute).get(occurrences)[classification + 1] = Double.toString((double)currFrequency/(double)totalFrequency[classification]); //Plus 1 to offset for attribute name value being in position 0
+				
+				double likelihood = (double)(currFrequency + laplacianSmoother)/(double)(totalFrequency[classification] + (laplacianSmoother * classifier.get(attribute).size())); //Setup to do laplacian smoothing, untested see not on laplacianSmoother declaration above
+				classifier.get(attribute).get(occurrences)[classification + 1] = Double.toString(likelihood); //Plus 1 to offset for attribute name value being in position 0
 			}
 		}
 	}
@@ -355,7 +364,9 @@ public class NaiveBayes
 					currClassificationCount++;
 				}
 			}			
-			classificationLikelihood.add((double)currClassificationCount/(double)knownClassifications.size()); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
+			double likelihood = (double)(currClassificationCount + laplacianSmoother)/(double)(knownClassifications.size() + (laplacianSmoother * classificationTypes.size())); //Setup to do laplacian smoothing, untested see not on laplacianSmoother declaration above
+			
+			classificationLikelihood.add(likelihood); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
 		}
 	}
 	
@@ -369,20 +380,31 @@ public class NaiveBayes
 			double classificationScore = 1;//Init to 1 since using a *=  (That would have saved me 15 minutes of debugging why my ints seemed to not be casting and why my outputs were always the first classification)		
 			for(int attribute = 0; attribute < classifier.size(); attribute++)
 			{
+				Boolean isUnseenValue = true;
 				for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
 				{				
 					if(classifier.get(attribute).get(occurrences)[0].compareTo(node[attribute]) == 0)//Check if current occurrence string is the same as the curr attr string 
 					{
-						classificationScore *= Double.parseDouble(classifier.get(attribute).get(occurrences)[classification+1]);
+						classificationScore *= (Double.parseDouble(classifier.get(attribute).get(occurrences)[classification+1]));
+						
+						isUnseenValue = false;
 					}
 				}
+				if(isUnseenValue)
+				{
+					//If data is unseen rebuild using a 0 instances value
+					//TODO maybe do not do if laplacianSmoother is 0 since ignoring that attribute works better than doing a 0 for it
+					classificationScore *= (0 + laplacianSmoother)/  attributeTotalFrequency.get(attribute)[classification] + laplacianSmoother * (classifier.get(attribute).size());
+					//classificationScore *= 0;
+				}
 			}
-			
-			classificationScores[classification] = classificationScore*classificationLikelihood.get(classification); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
+			classificationScores[classification] = classificationScore * (classificationLikelihood.get(classification)); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
 		}
 
 		int selectedClassificationLocation = -1;
 		double largestClassificationScore = -1;
+		Boolean unseenData = false;
+		
 		for(int classification = 0; classification < classificationScores.length; classification++)
 		{
 			if(classificationScores[classification] > largestClassificationScore)
@@ -392,13 +414,14 @@ public class NaiveBayes
 			}
 			else if(classificationScores[classification] == largestClassificationScore) //Unlikely but may happen if an unknown attribute value if found in the data and then both will be 0 (Now tested with that and does perform as expected)
 			{
+				unseenData = true;
 				if(classificationLikelihood.get(classification) > classificationLikelihood.get(selectedClassificationLocation))
 				{
 					selectedClassificationLocation = classification;
-					//TODO flag that this happened
 				}
 			}
 		}
+		unseenDataFlag.add(unseenData);
 		
 		return classificationTypes.get(selectedClassificationLocation);
 	}
@@ -491,7 +514,6 @@ public class NaiveBayes
 			FileOutputStream fileOut = new FileOutputStream(fileLocation);
 			
 			HSSFWorkbook workbook = new HSSFWorkbook(); 
-			Sheet worksheet = workbook.createSheet("Results");
 			
 		    Font bold = workbook.createFont();//Create font
 		    bold.setBoldweight(Font.BOLDWEIGHT_BOLD);//Make font bold	
@@ -520,6 +542,7 @@ public class NaiveBayes
 			classificationAttributeCell.setFillPattern(CellStyle.SOLID_FOREGROUND);
 			classificationAttributeCell.setFont(bold);
 
+			Sheet worksheet = workbook.createSheet("Results");
 			Row currRow = worksheet.createRow(0);
 			for(int attribute = 0; attribute < metadataLL.size() + 1; attribute++)
 			{
@@ -547,12 +570,11 @@ public class NaiveBayes
 			{
 				currRow = worksheet.createRow(node + 1); //Offset by one since first row is header data
 				int classifierCompleted = 0; //Necessary for if data does not end in classifier
-				for(int attribute = 0; attribute < metadataLL.size() + 1; attribute++)
+				for(int attribute = 0; attribute < metadataLL.size() + 2; attribute++) //+1 for the row for guessed data +1 for the row that contains 
 				{
 					Cell currCell = currRow.createCell(attribute);	
 					
-					
-					if(attribute < metadataLL.size())
+					if(attribute < metadataLL.size()) //Print testingData
 					{								
 						if(metadataLL.get(attribute)[2].compareTo("classifier") == 0)
 						{
@@ -565,7 +587,7 @@ public class NaiveBayes
 							currCell.setCellValue(testDataLL.get(node)[attribute - classifierCompleted]);
 						}
 					}
-					else
+					else if(attribute == metadataLL.size()) //Print guessed classification
 					{
 						currCell.setCellValue(guessedClassifications.get(node));
 						if(guessedClassifications.get(node).compareTo(actualClassifications.get(node)) == 0)
@@ -575,6 +597,13 @@ public class NaiveBayes
 						else
 						{
 							currCell.setCellStyle(incorrectCell);
+						}
+					}
+					else if(attribute == metadataLL.size() + 1) //Print potential bad training data if the flag is true
+					{
+						if(unseenDataFlag.get(node))
+						{
+							currCell.setCellValue("This node contained an value for one of its attributes that was never seen, the training data may have been bad and a guess was made"); //TODO make this a bit shorter
 						}
 					}
 				}
@@ -639,7 +668,6 @@ public class NaiveBayes
 				}
 			}	
 			
-			
 			for(int i = 0; i < (largestAttributeSize * (classificationTypes.size() + 1) + classificationTypes.size() + 1); i++)	//+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
 			{																													//+classificationTypes.size() so we can list the classification types likelihood at the end
 				currRow = worksheet.createRow(i + 1); //+1 since first row is attribute names
@@ -688,8 +716,9 @@ public class NaiveBayes
 					String[] currNode = classifier.get(i).get(j);
 					for(int k = 0; k < currNode.length; k++)
 					{
+						System.out.println("i:" + i + " j:" + j + " k:" + k + " largestAttributeSize:" + largestAttributeSize);
 						currRow = worksheet.getRow((j*largestAttributeSize + k)+1); //+1 since first row is attribute names
-						Cell currCell = currRow.createCell((i)+1);
+						Cell currCell = currRow.createCell((i)+1); //TODO figure out why this errors out at i:0 j:4 k:0 largestAttributeSize:105 on kidney dataset
 						currCell.setCellValue(currNode[k]);
 					}
 				}
@@ -715,8 +744,8 @@ public class NaiveBayes
 	
 	public static void main(String[] args) 
 	{ 
-		String intputFileName = "./data/golfWeather.xls";
-		String outputFileName = "./results/golfWeather-results.xls";
+		String intputFileName = "./data/chronic-kidney-disease.xls";
+		String outputFileName = "./results/chronic-kidney-disease-results.xls";
 		
 		
 		System.out.println("Importing data from: " + intputFileName);		
@@ -729,7 +758,7 @@ public class NaiveBayes
 		
 		
 		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
-		generateTrainingDataFirst(dataLL.size() - 3);
+		generateTrainingDataStride(dataLL.size() - 200);
 	
 
 		System.out.println("\nThe Data Is As Follows::");
