@@ -757,10 +757,10 @@ public class NaiveBayes
 		
 		
 		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
-		generateTrainingDataStride(dataLL.size() - 200);
+		generateTrainingDataStride(dataLL.size() - (dataLL.size() / 8));
 	
 
-		System.out.println("\nThe Data Is As Follows::");
+		System.out.println("\nTraining data has been generated and is as follows::");
 		//System.out.print("All Data: "); printLinkedListDataWithClassification(dataLL, classificationsLL);
 		System.out.print("Training Data: "); printLinkedListDataWithClassification(trainingDataLL, knownClassifications);
 		System.out.print("Testing Data: "); printLinkedListDataWithClassification(testDataLL, actualClassifications);
@@ -768,14 +768,13 @@ public class NaiveBayes
 		//printLinkedDataList(trainingDataLL);
 		//printLinkedDataList(testDataLL);
 		
-		
-		
 		generateClassifier();
+		System.out.println("\nThe model has been generated and is as follows::");
+		System.out.print("Classification Types: "); printClassificationTypes();
+		System.out.print("Each data occurence in training data followed by likelihood of it for each possible classification:\n");printLinkedListClassifier(classifier);	
+		
 		generateClassifications();
-		
-		System.out.print("\nClassification Types: "); printClassificationTypes(); //TODO make this its own function and print out all classification types	
-		System.out.print("Each data occurence in training data followed by likelihood of it for each possible classification (The model or classifier)::\n");printLinkedListClassifier(classifier);		
-		
+		System.out.println("\nThe guessed classifications have been generated and are as follows::");
 		System.out.print("Guessed Classifications: "); printClassification(guessedClassifications);
 		System.out.print("Actual Classifications: "); printClassification(actualClassifications);	
 		
@@ -784,7 +783,7 @@ public class NaiveBayes
 		
 		
 		
-		System.out.println("Exporting results to: " + outputFileName);	
+		System.out.println("\nExporting results to: " + outputFileName);	
 		outputExcelFile(outputFileName);
 		System.out.println("Exported");
 		
