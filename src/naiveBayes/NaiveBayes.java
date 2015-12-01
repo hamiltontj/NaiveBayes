@@ -497,7 +497,7 @@ public class NaiveBayes
 		System.out.print("[");
 		for(int i = 0; i < classificationTypes.size(); i++)
 		{		
-			System.out.print(classificationTypes.get(i) + ", ");
+			System.out.print(classificationTypes.get(i) + ": ");
 		}
 		System.out.print("]\n");		
 	}
@@ -770,8 +770,8 @@ public class NaiveBayes
 	
 	public static void main(String[] args) 
 	{ 
-		String intputFileName = "./data/chronic-kidney-disease.xls";
-		String outputFileName = "./results/chronic-kidney-disease-results.xls";
+		String intputFileName = "./data/IrisDataSet.xls";
+		String outputFileName = "./results/IrisDataSet-results.xls";
 		
 		
 		System.out.println("Importing data from: " + intputFileName);		
@@ -784,7 +784,7 @@ public class NaiveBayes
 		
 		
 		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
-		generateTrainingDataStride((dataLL.size() / 8));
+		generateTrainingDataStride((dataLL.size() / 2));
 	
 
 		System.out.println("\nTraining data has been generated and is as follows::");
@@ -797,7 +797,7 @@ public class NaiveBayes
 		
 		generateClassifier();
 		System.out.println("\nThe model has been generated and is as follows::");
-		System.out.print("Classification Types: "); printClassificationTypes();
+		System.out.print("Classification Type Order: "); printClassificationTypes();
 		System.out.print("Each data occurence in training data followed by likelihood of it for each possible classification:\n");printLinkedListClassifier(classifier);	
 		
 		generateClassifications();
@@ -814,11 +814,11 @@ public class NaiveBayes
 		writeExcelFile(outputFileName);
 		System.out.println("Exported");
 		
-
+		System.out.println("\n\nFinished Successfully");
 		
 		//Steps to do full Naive Bayes Process are as follows
 		//readExcelFile(intputFileName);
-		//generateTrainingDataStride(wantedSizeOfTrainingData); //There are multiple different training data generators
+		//generateTrainingDataGENERATOR(wantedSizeOfTrainingData); //There are multiple different training data generators
 		//generateClassifier();
 		//generateClassifications();
 		//outputExcelFile(outputFileName);

@@ -136,6 +136,7 @@ public class gui extends JFrame
 					if(tempFile.exists() && tempString.substring(tempString.lastIndexOf(".")+1).compareTo("xls") == 0)
 					{
 						importFileLocationTextField.setText(fileBrowser.getSelectedFile().getAbsolutePath());
+						exportFileLocationTextField.setText(System.getProperty("user.dir") + "\\results" + tempString.substring(tempString.lastIndexOf("\\")));
 					}
 				}
 			}
@@ -178,6 +179,9 @@ public class gui extends JFrame
 		{ 
 			public void actionPerformed(ActionEvent e) 
 			{
+				NaiveBayes.generateTrainingDataStride(50); //There are multiple different training data generators
+				NaiveBayes.generateClassifier();
+				NaiveBayes.generateClassifications();
 				NaiveBayes.writeExcelFile(exportFileLocationTextField.getText());
 			}
 		});
@@ -186,9 +190,6 @@ public class gui extends JFrame
 		{ 
 			public void actionPerformed(ActionEvent e) 
 			{
-				NaiveBayes.generateTrainingDataStride(100); //There are multiple different training data generators
-				NaiveBayes.generateClassifier();
-				NaiveBayes.generateClassifications();
 			}
 		});
 	}
