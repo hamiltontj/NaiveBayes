@@ -22,7 +22,7 @@ public class NaiveBayes
 	//static int classCount = 0; //Made dynamic so it could potentially handle jagged data i.e. sentence classification
 	static int classificationLocation = -1;
 	static LinkedList<String>  classificationTypes = new LinkedList<String>();
-	static LinkedList<Double>  classificationFrequencies = new LinkedList<Double>();
+	static LinkedList<Double>  classificationLikelihood = new LinkedList<Double>();
 
 	static LinkedList<String> knownClassifications = new LinkedList<String>();
 	static LinkedList<String> guessedClassifications = new LinkedList<String>();
@@ -318,9 +318,7 @@ public class NaiveBayes
 		{			
 			for(int occurrences = 0; occurrences < classifier.get(attribute).size(); occurrences++)
 			{
-				int currFrequency = 0;
-				
-				currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for attribute name value being in position 0
+				int currFrequency = Integer.parseInt(classifier.get(attribute).get(occurrences)[classification+1]); //Plus 1 to offset for attribute name value being in position 0
 				classifier.get(attribute).get(occurrences)[classification + 1] = Double.toString((double)currFrequency/(double)totalFrequency[classification]); //Plus 1 to offset for attribute name value being in position 0
 			}
 		}
@@ -357,7 +355,7 @@ public class NaiveBayes
 					currClassificationCount++;
 				}
 			}			
-			classificationFrequencies.add((double)currClassificationCount/(double)knownClassifications.size()); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
+			classificationLikelihood.add((double)currClassificationCount/(double)knownClassifications.size()); //Stored for later use to decide which to use in the event of a tie (Which is unlikely unless an unknown attribute value if found in the data and then both will be 0)
 		}
 	}
 	
@@ -380,7 +378,7 @@ public class NaiveBayes
 				}
 			}
 			
-			classificationScores[classification] = classificationScore*classificationFrequencies.get(classification); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
+			classificationScores[classification] = classificationScore*classificationLikelihood.get(classification); //Before setting multiply by likelyhood of classification (cuurClassificationCount/totalClassifications) 	
 		}
 
 		int selectedClassificationLocation = -1;
@@ -394,9 +392,10 @@ public class NaiveBayes
 			}
 			else if(classificationScores[classification] == largestClassificationScore) //Unlikely but may happen if an unknown attribute value if found in the data and then both will be 0 (Now tested with that and does perform as expected)
 			{
-				if(classificationFrequencies.get(classification) > classificationFrequencies.get(selectedClassificationLocation))
+				if(classificationLikelihood.get(classification) > classificationLikelihood.get(selectedClassificationLocation))
 				{
 					selectedClassificationLocation = classification;
+					//TODO flag that this happened
 				}
 			}
 		}
@@ -610,6 +609,92 @@ public class NaiveBayes
 				}
 			}
 			
+			worksheet = workbook.createSheet("Likelihood");
+			currRow = worksheet.createRow(0);
+			
+			int largestAttributeSize = 0;
+			
+			for(int attribute = 0; attribute < classifier.size(); attribute++)
+			{
+				if(classifier.get(attribute).size() > largestAttributeSize)
+				{
+					largestAttributeSize = classifier.get(attribute).size();
+				}
+			}
+			
+			//Label attributes along the top
+			for(int i = 0; i < metadataLL.size(); i++)
+			{
+				if(i == 0)
+				{
+					Cell currCell = currRow.createCell(i);	
+					//currCell.setCellValue("Attributes");
+					currCell.setCellStyle(attributeNameCells);
+				}
+				else
+				{
+					Cell currCell = currRow.createCell(i);
+					currCell.setCellValue(metadataLL.get(i-1)[0]); //-1 since the first cell does not contain a attribute name
+					currCell.setCellStyle(attributeNameCells);
+				}
+			}	
+			
+			
+			for(int i = 0; i < (largestAttributeSize * (classificationTypes.size() + 1) + classificationTypes.size() + 1); i++)	//+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
+			{																													//+classificationTypes.size() so we can list the classification types likelihood at the end
+				currRow = worksheet.createRow(i + 1); //+1 since first row is attribute names
+				Cell currCell = currRow.createCell(0);
+				
+				int currentClassificationType = i % (classificationTypes.size()+1); //+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
+				
+				//List the classification type of each row along the side
+				if(i < largestAttributeSize * (classificationTypes.size() + 1)) //+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
+				{
+					for(int j = 0; j < classificationTypes.size() + 1; j++) //+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
+					{
+						if(currentClassificationType == 0)
+						{
+							//Do nothing for now may have it say value later
+						}
+						else if (currentClassificationType == j)
+						{
+							currCell.setCellValue(classificationTypes.get(j-1)); //-1 since the first cell does not contain a classification type
+						}
+					}
+				}
+				else //List the classification likelihood of each row along the side
+				{
+					
+					for(int j = 0; j < classificationTypes.size() + 1; j++) //+1 since the first row of each stride lists each attributes string of what occurrence the likelihoods are displaying
+					{
+						if(currentClassificationType == 0)
+						{
+							//Do nothing for now may have it say value later
+						}
+						else if (currentClassificationType == j)
+						{
+							currCell.setCellValue("Likelihood of: " + classificationTypes.get(j-1) + " is " + classificationLikelihood.get(j-1)); //-1 since the first cell does not contain a classification type
+						}
+					}
+				}
+				currCell.setCellStyle(attributeNameCells);
+			}
+			
+			//List the data
+			for(int i = 0; i < classifier.size(); i++)
+			{
+				for(int j = 0; j < classifier.get(i).size(); j++)
+				{
+					String[] currNode = classifier.get(i).get(j);
+					for(int k = 0; k < currNode.length; k++)
+					{
+						currRow = worksheet.getRow((j*largestAttributeSize + k)+1); //+1 since first row is attribute names
+						Cell currCell = currRow.createCell((i)+1);
+						currCell.setCellValue(currNode[k]);
+					}
+				}
+			}
+			
 			workbook.write(fileOut);
 			workbook.close();
 			workbook.close();
@@ -631,7 +716,7 @@ public class NaiveBayes
 	public static void main(String[] args) 
 	{ 
 		String intputFileName = "./data/golfWeather.xls";
-		String outputFileName = "./results/golfWeather.xls";
+		String outputFileName = "./results/golfWeather-results.xls";
 		
 		
 		System.out.println("Importing data from: " + intputFileName);		
@@ -644,7 +729,7 @@ public class NaiveBayes
 		
 		
 		//generateTrainingDataFromFile("./data/golfWeather-training.xls");
-		generateTrainingDataRandom(dataLL.size() - 3);
+		generateTrainingDataFirst(dataLL.size() - 3);
 	
 
 		System.out.println("\nThe Data Is As Follows::");
