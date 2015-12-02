@@ -13,6 +13,8 @@ import org.apache.poi.ss.usermodel.*;
 
 public class NaiveBayes 
 { 
+	//All code by Trevor Hamilton
+	
 	static LinkedList<String[]> testDataLL  = new LinkedList<String[]>();
 	static LinkedList<String[]> trainingDataLL  = new LinkedList<String[]>();
 	static LinkedList<String[]> dataLL = new LinkedList<String[]>();
@@ -47,7 +49,7 @@ public class NaiveBayes
 			Workbook excelFile = new HSSFWorkbook(file);
 			
 			Sheet sheet1 = excelFile.getSheetAt(0);//Data sheet
-			//Set just incase metadata is incomplete or malformed
+			//Set just in case metadata is incomplete or malformed
 			classificationLocation = sheet1.getRow(0).getPhysicalNumberOfCells() - 1; //Minus one since classificationLocation includes 0 and getPhysicalNumberOfCells does not
 			
 			Sheet sheet2 = excelFile.getSheetAt(1); //Metadata sheet
