@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.awt.FlowLayout;
 import javax.swing.JTabbedPane;
 import javax.swing.JCheckBox;
@@ -208,7 +209,7 @@ public class gui extends JFrame
 					File locationToCopyFile = new File(newFileLocation);
 					try 
 					{
-						Files.copy(locationOfFileToCopy.toPath(), locationToCopyFile.toPath());
+						Files.copy(locationOfFileToCopy.toPath(), locationToCopyFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					} 
 					catch (IOException e1) 
 					{
@@ -223,7 +224,7 @@ public class gui extends JFrame
 		{ 
 			public void actionPerformed(ActionEvent e) 
 			{
-				NaiveBayes.generateTrainingDataStride(200); //There are multiple different training data generators
+				NaiveBayes.generateTrainingDataStride(NaiveBayes.dataLL.size()/2); //TODO Allow selection of training generator and size (as a fraction)
 				NaiveBayes.generateClassifier();
 				NaiveBayes.generateClassifications();
 				NaiveBayes.writeExcelFile(exportFileLocationTextField.getText());
@@ -237,7 +238,7 @@ public class gui extends JFrame
 					File locationToCopyFile = new File(newFileLocation);
 					try 
 					{
-						Files.copy(locationOfFileToCopy.toPath(), locationToCopyFile.toPath());
+						Files.copy(locationOfFileToCopy.toPath(), locationToCopyFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 					} 
 					catch (IOException e1) 
 					{
